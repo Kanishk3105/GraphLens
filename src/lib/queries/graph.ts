@@ -99,18 +99,26 @@ export async function getFullGraph(limit: number = 300): Promise<GraphData> {
   }
 }
 
-export async function getNodeNeighbors(nodeId: number, hops: number = 1): Promise<GraphData> {
+export async function getNodeNeighbors(
+  nodeId: number,
+  hops: number = 1
+): Promise<GraphData> {
   const session = getSession();
+
   try {
-    const result = await session.run(`
-      MATCH (start) WHERE id(start) = $nodeId
-      CALL {
-        WITH start
-        MATCH path = (start)-[*1..${Math.min(hops, 3)}]-(connected)
-        RETURN connected, relationships(path) AS rels
-      }
-      RETURN start, connected, rels
-    `, { nodeId: neo4j.int(nodeId) });
+    const safeHops = Math.min(Math.max(Number(hops) || 1, 1), 3);
+
+    const result = await session.run(
+  `
+  MATCH (start)
+  WHERE id(start) = $nodeId
+  OPTIONAL MATCH path = (start)-[*1..${safeHops}]-(connected)
+  RETURN start, connected, relationships(path) AS rels
+  `,
+  {
+    nodeId: neo4j.int(nodeId),
+  }
+);
 
     const nodesMap = new Map<number, GraphNode>();
     const relationships: GraphRelationship[] = [];
@@ -118,6 +126,7 @@ export async function getNodeNeighbors(nodeId: number, hops: number = 1): Promis
 
     for (const record of result.records) {
       const start = record.get('start');
+
       if (start && !nodesMap.has(toNumber(start.identity))) {
         nodesMap.set(toNumber(start.identity), {
           ...extractNodeProperties(start),
@@ -128,6 +137,7 @@ export async function getNodeNeighbors(nodeId: number, hops: number = 1): Promis
       }
 
       const connected = record.get('connected');
+
       if (connected && !nodesMap.has(toNumber(connected.identity))) {
         nodesMap.set(toNumber(connected.identity), {
           ...extractNodeProperties(connected),
@@ -138,12 +148,16 @@ export async function getNodeNeighbors(nodeId: number, hops: number = 1): Promis
       }
 
       const rels = record.get('rels');
+
       if (rels) {
         for (const r of rels) {
-          if (!relIds.has(toNumber(r.identity))) {
-            relIds.add(toNumber(r.identity));
+          const relId = toNumber(r.identity);
+
+          if (!relIds.has(relId)) {
+            relIds.add(relId);
+
             relationships.push({
-              _id: toNumber(r.identity),
+              _id: relId,
               _type: r.type,
               _startNodeId: toNumber(r.start),
               _endNodeId: toNumber(r.end),
@@ -153,7 +167,10 @@ export async function getNodeNeighbors(nodeId: number, hops: number = 1): Promis
       }
     }
 
-    return { nodes: Array.from(nodesMap.values()), relationships };
+    return {
+      nodes: Array.from(nodesMap.values()),
+      relationships,
+    };
   } finally {
     await session.close();
   }
