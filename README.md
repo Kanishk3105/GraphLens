@@ -8,7 +8,7 @@
 
 ## 🌐 Live Demo & Deliverables
 
-* **Hosted Application Demo:** `https://graph-lens-sigma.vercel.app`
+* **Hosted Application Demo:** `https://graph-lens-sigma.vercel.app/`
 * **CognoDB Protocol:** Bolt 5.4 over TLS (`bolt+s://`)
 * **Repository:** `https://github.com/Kanishk3105/GraphLens`
 * **Assignment Submitter:** Wexa AI Candidate Take-Home Project
