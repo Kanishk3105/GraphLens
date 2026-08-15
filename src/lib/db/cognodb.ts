@@ -13,19 +13,27 @@ function getEnvVar(name: string): string {
   return value;
 }
 
+function isServerlessRuntime(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
 export function getDriver(): Driver {
   if (!driver) {
     const uri = getEnvVar('COGNODB_URI');
     const username = getEnvVar('COGNODB_USERNAME');
     const password = getEnvVar('COGNODB_PASSWORD');
+    const serverless = isServerlessRuntime();
 
     driver = neo4j.driver(
       uri,
       neo4j.auth.basic(username, password),
       {
-        maxConnectionPoolSize: 50,
-        connectionAcquisitionTimeout: 10000,
-        connectionTimeout: 30000,
+        // Serverless functions should keep pools small and recycle connections quickly.
+        maxConnectionPoolSize: serverless ? 5 : 50,
+        maxConnectionLifetime: serverless ? 60_000 : 3_600_000,
+        connectionAcquisitionTimeout: 15_000,
+        connectionTimeout: 30_000,
+        disableLosslessIntegers: true,
         logging: neo4j.logging.console(
           process.env.NODE_ENV === 'development' ? 'warn' : 'error'
         ),

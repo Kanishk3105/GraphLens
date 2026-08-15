@@ -16,6 +16,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,26 +26,38 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     } else {
       setQuery('');
       setResults([]);
+      setError(null);
     }
   }, [isOpen]);
 
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setError(null);
       return;
     }
 
     const timer = setTimeout(async () => {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=15`);
+        const data = await res.json();
         if (res.ok) {
-          const data = await res.json();
-          setResults(data);
+          setResults(Array.isArray(data) ? data : []);
           setSelectedIndex(0);
+        } else {
+          setResults([]);
+          setError(
+            typeof data?.error === 'string'
+              ? data.error
+              : 'Search query failed. Check CognoDB connection and try again.'
+          );
         }
       } catch (err) {
         console.error('Search fetch error:', err);
+        setResults([]);
+        setError('Unable to reach the search API. Check your network connection.');
       } finally {
         setLoading(false);
       }
@@ -120,7 +133,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
           )}
 
-          {!loading && query && results.length === 0 && (
+          {!loading && error && (
+            <div className="p-8 text-center text-rose-400">
+              <p className="text-sm">{error}</p>
+              <p className="text-xs text-slate-500 mt-1 font-mono">Verify CognoDB credentials are configured on the server.</p>
+            </div>
+          )}
+
+          {!loading && !error && query && results.length === 0 && (
             <div className="p-8 text-center text-slate-400">
               <p className="text-sm">No graph entities found matching &quot;{query}&quot;</p>
               <p className="text-xs text-slate-500 mt-1 font-mono">Try searching for &quot;Python&quot;, &quot;React&quot;, &quot;GraphLens&quot;, &quot;Machine Learning&quot;</p>

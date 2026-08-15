@@ -8,9 +8,9 @@
 
 ## 🌐 Live Demo & Deliverables
 
-* **Hosted Application Demo:** `https://graphlens.vercel.app` *(or custom deployment)*
+* **Hosted Application Demo:** `https://graph-lens-sigma.vercel.app`
 * **CognoDB Protocol:** Bolt 5.4 over TLS (`bolt+s://`)
-* **Repository:** `https://github.com/wexa-ai/graphlens`
+* **Repository:** `https://github.com/Kanishk3105/GraphLens`
 * **Assignment Submitter:** Wexa AI Candidate Take-Home Project
 
 ---
@@ -177,7 +177,7 @@ LIMIT 12;
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/wexa-ai/graphlens.git
+git clone https://github.com/Kanishk3105/GraphLens.git
 cd graphlens
 ```
 
@@ -249,7 +249,16 @@ npm run start
 
 ---
 
-## ☁️ CognoDB Cloud Instance Setup Guide
+## ☁️ Deploy to Vercel
+
+1. Import the GitHub repository into [Vercel](https://vercel.com).
+2. In **Project Settings → Environment Variables**, add the same three variables from `.env.local`:
+   * `COGNODB_URI`
+   * `COGNODB_USERNAME`
+   * `COGNODB_PASSWORD`
+3. Redeploy after saving the variables. The `/api/health` endpoint should return `"status": "healthy"` when credentials are configured correctly.
+
+---
 
 1. **Sign Up:** Go to [console.cognodb.com/signup](https://console.cognodb.com/signup) and create a free account (no credit card required).
 2. **Provision Instance:** Click **Create Instance**, choose the **Free C0** tier, and select your preferred region (e.g., `us-east4`).
